@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { StatusBadge } from "@/app/components/StatusBadge";
 import { MapActions } from "@/app/map/[id]/MapActions";
 import { StepsPanel } from "@/app/map/[id]/StepsPanel";
+import { ExportButtons } from "@/app/map/[id]/ExportButtons";
 import type { ProcessMap, ProcessStep } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -46,7 +47,10 @@ export default async function MapDetailPage({
           </div>
           {map.client_name && <p className="mt-1 text-sm text-neutral-500">{map.client_name}</p>}
         </div>
-        <MapActions mapId={map.id} status={map.status} />
+        <div className="flex flex-col items-end gap-3">
+          <MapActions mapId={map.id} status={map.status} />
+          <ExportButtons mapId={map.id} stepCount={steps.length} />
+        </div>
       </div>
 
       <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-2">
