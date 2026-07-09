@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { StatusBadge } from "@/app/components/StatusBadge";
 import { MapActions } from "@/app/map/[id]/MapActions";
+import { StepsPanel } from "@/app/map/[id]/StepsPanel";
 import type { ProcessMap, ProcessStep } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -65,38 +66,7 @@ export default async function MapDetailPage({
 
         <div>
           <h2 className="text-sm font-semibold text-neutral-700">Process Steps</h2>
-          {steps.length === 0 ? (
-            <div className="mt-2 rounded-xl border border-dashed border-neutral-300 p-8 text-center text-sm text-neutral-500">
-              No steps yet.
-            </div>
-          ) : (
-            <div className="mt-2 overflow-hidden rounded-xl border border-neutral-200">
-              <table className="min-w-full divide-y divide-neutral-200 text-sm">
-                <thead className="bg-neutral-50">
-                  <tr>
-                    <th className="px-3 py-2 text-left font-medium text-neutral-500">#</th>
-                    <th className="px-3 py-2 text-left font-medium text-neutral-500">Label</th>
-                    <th className="px-3 py-2 text-left font-medium text-neutral-500">Type</th>
-                    <th className="px-3 py-2 text-left font-medium text-neutral-500">Confidence</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-neutral-100 bg-white">
-                  {steps.map((step) => (
-                    <tr key={step.id}>
-                      <td className="px-3 py-2 text-neutral-500">{step.sequence}</td>
-                      <td className="px-3 py-2 font-medium text-neutral-900">{step.label}</td>
-                      <td className="px-3 py-2 capitalize text-neutral-600">{step.step_type}</td>
-                      <td className="px-3 py-2 text-neutral-500">
-                        {step.label_confidence !== null
-                          ? `${Math.round(step.label_confidence * 100)}%`
-                          : "—"}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+          <StepsPanel mapId={map.id} steps={steps} mapCreatedAt={map.created_at} />
         </div>
       </div>
     </main>

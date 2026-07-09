@@ -3,7 +3,9 @@
 import { randomUUID } from "crypto";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { extractStepsForMap } from "@/lib/ai/extract";
 
 const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/heic"];
@@ -61,6 +63,11 @@ export async function createMap(
   if (insertError || !map) {
     return { error: `Could not save map: ${insertError?.message ?? "unknown error"}` };
   }
+
+  // Extraction is an accelerator, not a hard dependency (see docs/ARCHITECTURE.md
+  // "Core Without AI") — run it after the response so upload stays fast, and let
+  // the map detail page poll for steps while this is in flight.
+  after(() => extractStepsForMap(map.id));
 
   revalidatePath("/");
   redirect(`/map/${map.id}`);
