@@ -11,6 +11,7 @@ export interface ProcessMap {
   name: string;
   client_name: string | null;
   photo_url: string | null;
+  photo_path: string | null;
   status: MapStatus;
   notes: string | null;
 }

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { getSignedPhotoUrls } from "@/lib/supabase/signed-photo-url";
 import { MapCard } from "@/app/components/MapCard";
 import type { ProcessMap, ProcessStep, ExportLog } from "@/lib/types";
 
@@ -49,6 +50,8 @@ export default async function Home() {
     exportCountByMap.set(l.map_id, (exportCountByMap.get(l.map_id) ?? 0) + 1);
   }
 
+  const signedUrls = await getSignedPhotoUrls(maps.map((m) => m.photo_path));
+
   return (
     <main className="mx-auto max-w-5xl px-6 py-12">
       <div className="flex items-center justify-between gap-4">
@@ -84,6 +87,7 @@ export default async function Home() {
             <MapCard
               key={map.id}
               map={map}
+              photoUrl={map.photo_path ? (signedUrls.get(map.photo_path) ?? null) : null}
               stepCount={stepCountByMap.get(map.id) ?? 0}
               lowConfidenceCount={lowConfByMap.get(map.id) ?? 0}
               exportCount={exportCountByMap.get(map.id) ?? 0}

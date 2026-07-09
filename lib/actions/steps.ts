@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
 import type { StepType } from "@/lib/types";
 
 export async function updateStep(
@@ -9,7 +9,7 @@ export async function updateStep(
   stepId: string,
   updates: { label: string; step_type: StepType; sequence: number; notes?: string | null },
 ): Promise<void> {
-  const supabase = createAdminClient();
+  const supabase = await createClient();
   await supabase
     .from("process_steps")
     .update({
@@ -27,7 +27,12 @@ export async function addStep(
   mapId: string,
   step: { label: string; step_type: StepType; sequence: number },
 ): Promise<void> {
-  const supabase = createAdminClient();
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return;
+
   await supabase.from("process_steps").insert({
     map_id: mapId,
     label: step.label,
@@ -36,12 +41,13 @@ export async function addStep(
     label_source: "manual",
     label_confidence: null,
     label_review_status: "reviewed",
+    user_id: user.id,
   });
   revalidatePath(`/map/${mapId}`);
 }
 
 export async function deleteStep(mapId: string, stepId: string): Promise<void> {
-  const supabase = createAdminClient();
+  const supabase = await createClient();
   await supabase.from("process_steps").delete().eq("id", stepId);
   revalidatePath(`/map/${mapId}`);
 }

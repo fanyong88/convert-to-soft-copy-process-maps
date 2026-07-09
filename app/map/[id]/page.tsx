@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getSignedPhotoUrl } from "@/lib/supabase/signed-photo-url";
 import { StatusBadge } from "@/app/components/StatusBadge";
 import { MapActions } from "@/app/map/[id]/MapActions";
 import { StepsPanel } from "@/app/map/[id]/StepsPanel";
@@ -32,6 +33,7 @@ export default async function MapDetailPage({
 
   const map = mapRes.data as ProcessMap;
   const steps = (stepsRes.data ?? []) as ProcessStep[];
+  const photoUrl = await getSignedPhotoUrl(map.photo_path);
 
   return (
     <main className="mx-auto max-w-6xl px-6 py-10">
@@ -57,9 +59,9 @@ export default async function MapDetailPage({
         <div>
           <h2 className="text-sm font-semibold text-neutral-700">Original Photo</h2>
           <div className="mt-2 overflow-hidden rounded-xl border border-neutral-200 bg-neutral-50">
-            {map.photo_url ? (
+            {photoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={map.photo_url} alt={map.name} className="w-full object-contain" />
+              <img src={photoUrl} alt={map.name} className="w-full object-contain" />
             ) : (
               <div className="flex h-64 items-center justify-center text-sm text-neutral-400">
                 No photo

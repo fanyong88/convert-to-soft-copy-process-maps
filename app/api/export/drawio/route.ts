@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
 import { buildDrawioXml } from "@/lib/export/drawio";
 import type { ProcessStep } from "@/lib/types";
 
@@ -10,7 +10,15 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "map_id is required" }, { status: 400 });
   }
 
-  const supabase = createAdminClient();
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ error: "Sign in required" }, { status: 401 });
+  }
+
+  // RLS scopes both reads to maps/steps the caller owns (or legacy rows).
   const [{ data: map }, { data: steps }] = await Promise.all([
     supabase.from("process_maps").select("name").eq("id", mapId).single(),
     supabase
@@ -26,9 +34,12 @@ export async function POST(req: Request) {
 
   const xml = buildDrawioXml(steps as ProcessStep[]);
 
-  await supabase
-    .from("export_logs")
-    .insert({ map_id: mapId, export_format: "drawio_xml", triggered_by: "anonymous" });
+  await supabase.from("export_logs").insert({
+    map_id: mapId,
+    export_format: "drawio_xml",
+    triggered_by: user.email ?? user.id,
+    user_id: user.id,
+  });
 
   const safeName = (map?.name ?? "process-map").replace(/[^a-z0-9]+/gi, "-").toLowerCase();
 

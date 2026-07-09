@@ -33,17 +33,26 @@ export async function extractStepsForMap(mapId: string): Promise<ExtractResult> 
 
   const { data: map, error: mapError } = await supabase
     .from("process_maps")
-    .select("photo_url")
+    .select("photo_path, user_id")
     .eq("id", mapId)
     .single();
 
-  if (mapError || !map?.photo_url) {
+  if (mapError || !map?.photo_path) {
     return { ok: false, count: 0, error: "Map or photo not found" };
   }
 
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
     return { ok: false, count: 0, error: "AI extraction is not configured (missing OPENAI_API_KEY)" };
+  }
+
+  // Bucket is private (docs/SECURITY.md lock-down sprint) — mint a short-lived
+  // signed URL so OpenAI's servers can fetch the photo.
+  const { data: signed, error: signError } = await supabase.storage
+    .from("map-photos")
+    .createSignedUrl(map.photo_path, 300);
+  if (signError || !signed) {
+    return { ok: false, count: 0, error: "Could not create a signed URL for the photo" };
   }
 
   let content: string;
@@ -64,7 +73,7 @@ export async function extractStepsForMap(mapId: string): Promise<ExtractResult> 
             role: "user",
             content: [
               { type: "text", text: "Extract the process steps from this flipchart photo." },
-              { type: "image_url", image_url: { url: map.photo_url } },
+              { type: "image_url", image_url: { url: signed.signedUrl } },
             ],
           },
         ],
@@ -110,6 +119,7 @@ export async function extractStepsForMap(mapId: string): Promise<ExtractResult> 
     label_confidence:
       typeof s.confidence === "number" ? Math.max(0, Math.min(1, s.confidence)) : null,
     label_review_status: "unreviewed",
+    user_id: map.user_id,
   }));
 
   const { error: insertError } = await supabase.from("process_steps").insert(rows);

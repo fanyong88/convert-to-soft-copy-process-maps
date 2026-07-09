@@ -4,22 +4,23 @@ import type { ProcessMap } from "@/lib/types";
 
 interface MapCardProps {
   map: ProcessMap;
+  photoUrl: string | null;
   stepCount: number;
   lowConfidenceCount: number;
   exportCount: number;
 }
 
-export function MapCard({ map, stepCount, lowConfidenceCount, exportCount }: MapCardProps) {
+export function MapCard({ map, photoUrl, stepCount, lowConfidenceCount, exportCount }: MapCardProps) {
   return (
     <Link
       href={`/map/${map.id}`}
       className="group flex flex-col rounded-xl border border-neutral-200 bg-white p-4 shadow-sm transition hover:border-neutral-300 hover:shadow-md"
     >
       <div className="aspect-video w-full overflow-hidden rounded-lg bg-neutral-100">
-        {map.photo_url ? (
+        {photoUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={map.photo_url}
+            src={photoUrl}
             alt={map.name}
             className="h-full w-full object-cover transition group-hover:scale-[1.02]"
           />
