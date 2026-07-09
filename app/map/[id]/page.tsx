@@ -48,7 +48,7 @@ export default async function MapDetailPage({
           {map.client_name && <p className="mt-1 text-sm text-neutral-500">{map.client_name}</p>}
         </div>
         <div className="flex flex-col items-end gap-3">
-          <MapActions mapId={map.id} status={map.status} />
+          <MapActions mapId={map.id} mapName={map.name} status={map.status} />
           <ExportButtons mapId={map.id} stepCount={steps.length} />
         </div>
       </div>

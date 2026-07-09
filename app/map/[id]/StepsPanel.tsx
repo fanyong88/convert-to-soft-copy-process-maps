@@ -151,8 +151,22 @@ export function StepsPanel({
     );
   }
 
+  const needsReview = steps
+    .filter((s) => s.label_review_status === "unreviewed" && s.label_confidence !== null && s.label_confidence < 0.85)
+    .sort((a, b) => (a.label_confidence ?? 0) - (b.label_confidence ?? 0));
+  const needsReviewIds = new Set(needsReview.map((s) => s.id));
+  const restInOrder = steps.filter((s) => !needsReviewIds.has(s.id));
+  const orderedRows = [...needsReview, ...restInOrder];
+
   return (
     <div className="mt-2 space-y-3">
+      {needsReview.length > 0 && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+          <span className="font-semibold">{needsReview.length}</span> step
+          {needsReview.length === 1 ? "" : "s"} need review — flagged at the top of the table
+          below.
+        </div>
+      )}
       <div className="overflow-hidden rounded-xl border border-neutral-200">
         <table className="min-w-full divide-y divide-neutral-200 text-sm">
           <thead className="bg-neutral-50">
@@ -165,7 +179,19 @@ export function StepsPanel({
             </tr>
           </thead>
           <tbody className="divide-y divide-neutral-100 bg-white">
-            {steps.map((step) =>
+            {orderedRows.flatMap((step, i) => {
+              const rows = [];
+              if (i === needsReview.length && needsReview.length > 0 && restInOrder.length > 0) {
+                rows.push(
+                  <tr key="divider">
+                    <td colSpan={5} className="bg-neutral-50 px-3 py-1 text-[11px] font-medium uppercase tracking-wide text-neutral-400">
+                      Rest of process, in order
+                    </td>
+                  </tr>,
+                );
+              }
+              const isFlagged = i < needsReview.length;
+              rows.push(
               editingId === step.id ? (
                 <tr key={step.id} className="bg-neutral-50">
                   <td className="px-3 py-2">
@@ -216,7 +242,10 @@ export function StepsPanel({
                   </td>
                 </tr>
               ) : (
-                <tr key={step.id} className="group">
+                <tr
+                  key={step.id}
+                  className={`group ${isFlagged ? ((step.label_confidence ?? 1) < 0.7 ? "bg-red-50/60" : "bg-amber-50/60") : ""}`}
+                >
                   <td className="px-3 py-2 text-neutral-500">{step.sequence}</td>
                   <td className="px-3 py-2 font-medium text-neutral-900">{step.label}</td>
                   <td className="px-3 py-2 capitalize text-neutral-600">{step.step_type}</td>
@@ -243,7 +272,9 @@ export function StepsPanel({
                   </td>
                 </tr>
               ),
-            )}
+              );
+              return rows;
+            })}
           </tbody>
         </table>
       </div>

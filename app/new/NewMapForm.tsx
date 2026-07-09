@@ -5,19 +5,38 @@ import Link from "next/link";
 import { createMap, type CreateMapState } from "@/lib/actions/maps";
 
 const initialState: CreateMapState = { error: null };
+const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
+const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/heic"];
 
 export function NewMapForm() {
   const [state, formAction, pending] = useActionState(createMap, initialState);
   const [preview, setPreview] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
+  const [clientError, setClientError] = useState<string | null>(null);
 
   function onPhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) {
       setPreview(null);
       setFileName(null);
+      setClientError(null);
       return;
     }
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      setClientError("Please upload a JPG, PNG, WEBP, or HEIC image.");
+      setPreview(null);
+      setFileName(null);
+      e.target.value = "";
+      return;
+    }
+    if (file.size > MAX_PHOTO_BYTES) {
+      setClientError("Photo must be under 10 MB.");
+      setPreview(null);
+      setFileName(null);
+      e.target.value = "";
+      return;
+    }
+    setClientError(null);
     setFileName(file.name);
     const reader = new FileReader();
     reader.onload = () => setPreview(reader.result as string);
@@ -26,9 +45,9 @@ export function NewMapForm() {
 
   return (
     <form action={formAction} className="space-y-5">
-      {state.error && (
+      {(clientError || state.error) && (
         <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-          {state.error}
+          {clientError ?? state.error}
         </div>
       )}
 
@@ -84,7 +103,7 @@ export function NewMapForm() {
       <div className="flex items-center gap-3 pt-2">
         <button
           type="submit"
-          disabled={pending}
+          disabled={pending || !!clientError}
           className="inline-flex items-center rounded-lg bg-neutral-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-neutral-700 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {pending ? "Uploading…" : "Create Map"}

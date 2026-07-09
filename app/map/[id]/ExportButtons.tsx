@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 async function downloadFrom(url: string, mapId: string, fallbackName: string) {
   const res = await fetch(url, {
@@ -32,9 +32,13 @@ export function ExportButtons({ mapId, stepCount }: { mapId: string; stepCount: 
   const [pending, setPending] = useState<"excel" | "drawio" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const disabled = stepCount === 0;
+  // Synchronous lock: guards against a rapid double-click firing two
+  // requests before React commits the `pending` state from the first click.
+  const inFlight = useRef(false);
 
   async function onExport(kind: "excel" | "drawio") {
-    if (pending) return;
+    if (inFlight.current) return;
+    inFlight.current = true;
     setPending(kind);
     setError(null);
     try {
@@ -46,6 +50,7 @@ export function ExportButtons({ mapId, stepCount }: { mapId: string; stepCount: 
     } catch (err) {
       setError(err instanceof Error ? err.message : "Export failed");
     } finally {
+      inFlight.current = false;
       setPending(null);
     }
   }

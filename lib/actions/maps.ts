@@ -78,9 +78,13 @@ export async function deleteMap(mapId: string): Promise<void> {
 
   const { data: map } = await supabase
     .from("process_maps")
-    .select("photo_url")
+    .select("name, photo_url")
     .eq("id", mapId)
     .single();
+
+  // Human-only, always-confirmed action (docs/AGENTIC_LAYER.md) — audit trail
+  // lives in Vercel function logs since v1 has no dedicated audit table.
+  console.log(`[audit] deleteMap: id=${mapId} name=${JSON.stringify(map?.name)} triggered_by=anonymous at=${new Date().toISOString()}`);
 
   if (map?.photo_url) {
     const path = map.photo_url.split("/map-photos/")[1];
